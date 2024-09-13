@@ -66,3 +66,17 @@ export const updateTodosCtrl = (req, res) => {
 
   res.json({ message: "Tarea actualizada exitosamente" });
 }
+export const deleteTodosCtrl = (req, res) => {
+  const userId = req.user.id;
+  const { id } = req.params;
+
+  const index = database.todos.findIndex((todo) => todo.id === Number(id));
+
+  if (index === -1) {
+    return res.status(404).json({ message: "Tarea no encontrada" });
+  }
+
+  database.todos.splice(index, 1);
+
+  res.json({ message: "Tarea eliminada exitosamente" });
+}
