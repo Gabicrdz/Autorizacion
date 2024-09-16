@@ -1,25 +1,188 @@
+const fetchTodos = (tbody) => {
+  fetch("http://localhost:4000/todos", {
+    credentials: "include",
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      tbody.innerHTML = ""; // Limpiar la tabla antes de agregar nuevas filas
+      data.todos.forEach((todo) => {
+        const tr = document.createElement("tr");
+
+        const td1 = document.createElement("td");
+        td1.classList.add("border", "px-4", "py-2");
+        td1.textContent = todo.id;
+
+        const td2 = document.createElement("td");
+        td2.classList.add("border", "px-4", "py-2");
+        td2.textContent = todo.title;
+
+        const td3 = document.createElement("td");
+        td3.classList.add("border", "px-4", "py-2");
+        td3.textContent = todo.completed ? "Sí" : "No";
+
+        const td4 = document.createElement("td");
+        td4.classList.add("border", "px-4", "py-2");
+        td4.textContent = todo.owner;
+
+        const td5 = document.createElement("td");
+        td5.classList.add("border", "px-4", "py-2");
+
+        const updateBtn = document.createElement("button");
+        updateBtn.classList.add("bg-blue-500", "text-white", "p-2", "rounded", "hover:bg-blue-600", "mr-2");
+        updateBtn.textContent = "Actualizar";
+        updateBtn.addEventListener("click", () => {
+          showModal(todo, tbody);
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.classList.add("bg-red-500", "text-white", "p-2", "rounded", "hover:bg-red-600");
+        deleteBtn.textContent = "Borrar";
+        deleteBtn.addEventListener("click", () => {
+          fetch(`http://localhost:4000/todos/${todo.id}`, {
+            method: "DELETE",
+            credentials: "include",
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log("Tarea eliminada:", data);
+              fetchTodos(tbody); // Volver a obtener la lista de tareas
+            })
+            .catch((error) => {
+              console.error("Error al eliminar tarea:", error);
+            });
+        });
+
+        td5.appendChild(updateBtn);
+        td5.appendChild(deleteBtn);
+
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        tr.appendChild(td5);
+        tbody.appendChild(tr);
+      });
+    })
+    .catch((error) => {
+      console.error("Error al obtener tareas:", error);
+    });
+};
+
+const showModal = (todo, tbody) => {
+  const modal = document.createElement("div");
+  modal.classList.add("fixed", "top-0", "left-0", "w-full", "h-full", "bg-black", "bg-opacity-50", "flex", "justify-center", "items-center");
+
+  const modalContent = document.createElement("div");
+  modalContent.classList.add("bg-white", "p-6", "rounded", "shadow-md");
+
+  const modalTitle = document.createElement("h2");
+  modalTitle.textContent = todo.id ? `Editando Tarea ${todo.id}` : "Agregar Nueva Tarea";
+  modalContent.appendChild(modalTitle);
+
+  const inputTitle = document.createElement("input");
+  inputTitle.value = todo.title;
+  inputTitle.classList.add("border", "p-2", "w-full", "mb-4");
+  modalContent.appendChild(inputTitle);
+
+  const completedCheckbox = document.createElement("input");
+  completedCheckbox.type = "checkbox";
+  completedCheckbox.checked = todo.completed;
+  modalContent.appendChild(completedCheckbox);
+  modalContent.appendChild(document.createTextNode(" Completada"));
+
+  const confirmButton = document.createElement("button");
+  confirmButton.textContent = todo.id ? "Actualizar" : "Agregar";
+  confirmButton.classList.add("bg-green-500", "text-white", "p-2", "rounded", "mr-2");
+  confirmButton.addEventListener("click", () => {
+    if (todo.id) {
+      // Actualizar tarea existente
+      const updatedTodo = {
+        title: inputTitle.value,
+        completed: completedCheckbox.checked,
+      };
+
+      fetch(`http://localhost:4000/todos/${todo.id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedTodo),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Tarea actualizada:", data);
+          modal.remove();
+          fetchTodos(tbody); // Volver a obtener la lista de tareas
+        })
+        .catch((error) => {
+          console.error("Error al actualizar tarea:", error);
+        });
+    } else {
+      const newTodo = {
+        title: inputTitle.value,
+        completed: completedCheckbox.checked,
+      };
+
+      fetch("http://localhost:4000/todos", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newTodo),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Tarea agregada:", data);
+          modal.remove();
+          fetchTodos(tbody); // Volver a obtener la lista de tareas
+        })
+        .catch((error) => {
+          console.error("Error al agregar tarea:", error);
+        });
+    }
+  });
+  modalContent.appendChild(confirmButton);
+
+  const cancelButton = document.createElement("button");
+  cancelButton.textContent = "Cancelar";
+  cancelButton.classList.add("bg-red-500", "text-white", "p-2", "rounded");
+  cancelButton.addEventListener("click", () => {
+    modal.remove();
+  });
+  modalContent.appendChild(cancelButton);
+
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+};
+
 export const todosPage = () => {
   const container = document.createElement("div");
-
-  container.classList.add(
-    "flex",
-    "flex-col",
-    "items-center",
-    "justify-center",
-    "min-h-screen",
-    "bg-gray-200",
-    "p-4"
-  );
+  container.classList.add("flex", "flex-col", "items-center", "justify-center", "h-screen", "bg-gray-200");
 
   const btnHome = document.createElement("button");
-  btnHome.classList.add(
-    "bg-blue-500",
-    "text-white",
-    "p-2",
-    "rounded",
-    "hover:bg-blue-600",
-    "mb-4"
-  );
+  btnHome.classList.add("bg-blue-500", "text-white", "p-2", "rounded", "hover:bg-blue-600", "mb-4");
   btnHome.textContent = "Home";
   btnHome.addEventListener("click", () => {
     window.location.pathname = "/home";
@@ -29,165 +192,57 @@ export const todosPage = () => {
   title.classList.add("text-3xl", "font-bold", "mb-4");
   title.textContent = "List of Todos";
 
-  const btnAdd = document.createElement("button");
-  btnAdd.textContent = "Agregar";
-  btnAdd.classList.add(
-    "bg-green-500",
-    "text-white",
-    "p-2",
-    "rounded",
-    "hover:bg-green-600",
-    "mb-4",
-    "ml-4"
-  );
-  btnAdd.addEventListener("click", () => openModal());
-
   const table = document.createElement("table");
-  table.classList.add(
-    "w-full",
-    "bg-white",
-    "shadow-md",
-    "overflow-hidden",
-    "rounded-lg"
-  );
+  table.classList.add("w-1/2", "bg-white", "shadow-md", "h-[700px]", "overflow-y-scroll");
 
   const thead = document.createElement("thead");
-  const headerRow = document.createElement("tr");
-  ["ID", "Title", "Completed", "Owner Id", "Owner Name", "Actions"].forEach(headerText => {
-    const th = document.createElement("th");
-    th.classList.add("border", "px-4", "py-2", "bg-gray-100");
-    th.textContent = headerText;
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
+  const tr = document.createElement("tr");
+  const th1 = document.createElement("th");
+  th1.classList.add("border", "px-4", "py-2");
+  th1.textContent = "ID";
+
+  const th2 = document.createElement("th");
+  th2.classList.add("border", "px-4", "py-2");
+  th2.textContent = "Title";
+
+  const th3 = document.createElement("th");
+  th3.classList.add("border", "px-4", "py-2");
+  th3.textContent = "Completed";
+
+  const th4 = document.createElement("th");
+  th4.classList.add("border", "px-4", "py-2");
+  th4.textContent = "Owner Id";
+
+  const th5 = document.createElement("th");
+  th5.classList.add("border", "px-4", "py-2");
+  th5.textContent = "Acciones";
+
+  tr.appendChild(th1);
+  tr.appendChild(th2);
+  tr.appendChild(th3);
+  tr.appendChild(th4);
+  tr.appendChild(th5);
+  thead.appendChild(tr);
 
   const tbody = document.createElement("tbody");
   tbody.classList.add("text-center");
-
   table.appendChild(thead);
   table.appendChild(tbody);
 
   container.appendChild(btnHome);
-  container.appendChild(btnAdd);
+
+  fetchTodos(tbody);
+
+  const addButton = document.createElement("button");
+  addButton.classList.add("bg-green-500", "text-white", "p-2", "rounded", "mt-4");
+  addButton.textContent = "Agregar Tarea";
+  addButton.addEventListener("click", () => {
+    showModal({ title: "", completed: false }, tbody);
+  });
+  container.appendChild(addButton);
+
   container.appendChild(title);
   container.appendChild(table);
-
-  // Modal
-  const modal = document.createElement("div");
-  modal.classList.add("fixed", "inset-0", "bg-gray-600", "bg-opacity-50", "overflow-y-auto", "h-full", "w-full", "hidden");
-  modal.id = "modal";
-
-  const modalContent = document.createElement("div");
-  modalContent.classList.add("relative", "top-20", "mx-auto", "p-5", "border", "w-96", "shadow-lg", "rounded-md", "bg-white");
-
-  const form = document.createElement("form");
-  form.id = "todoForm";
-
-  const fields = [
-    { name: "title", label: "Title", type: "text" },
-    { name: "completed", label: "Completed", type: "checkbox" },
-    { name: "owner", label: "Owner ID", type: "number" },
-    { name: "ownerName", label: "Owner Name", type: "text" }
-  ];
-
-  fields.forEach(field => {
-    const label = document.createElement("label");
-    label.textContent = field.label;
-    label.classList.add("block", "mb-2");
-
-    const input = document.createElement("input");
-    input.name = field.name;
-    input.type = field.type;
-    if (field.type !== "checkbox") {
-      input.classList.add("w-full", "px-3", "py-2", "border", "rounded-md");
-    }
-
-    form.appendChild(label);
-    form.appendChild(input);
-    form.appendChild(document.createElement("br"));
-  });
-
-  const submitButton = document.createElement("button");
-  submitButton.type = "submit";
-  submitButton.textContent = "Submit";
-  submitButton.classList.add("mt-4", "bg-blue-500", "text-white", "p-2", "rounded");
-
-  form.appendChild(submitButton);
-  modalContent.appendChild(form);
-  modal.appendChild(modalContent);
-  container.appendChild(modal);
-
-  function openModal(todo = null) {
-    const form = document.getElementById("todoForm");
-    form.reset();
-
-    if (todo) {
-      form.title.value = todo.title;
-      form.completed.checked = todo.completed;
-      form.owner.value = todo.owner;
-      form.ownerName.value = todo.ownerName;
-    }
-
-    modal.classList.remove("hidden");
-  }
-
-  function closeModal() {
-    modal.classList.add("hidden");
-  }
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-    const todoData = Object.fromEntries(formData);
-    todoData.completed = form.completed.checked;
-
-    // Aquí puedes enviar todoData a tu API o manejarla como necesites
-    console.log("Todo data:", todoData);
-
-    closeModal();
-    // Aquí deberías actualizar la tabla con los nuevos datos
-  });
-
-  fetch("http://localhost:4000/todos", {
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      data.todos.forEach((todo) => {
-        if (todo.id > 10) return;
-
-        const tr = document.createElement("tr");
-
-        ["id", "title", "completed", "owner", "ownerName"].forEach(key => {
-          const td = document.createElement("td");
-          td.classList.add("border", "px-4", "py-2");
-          td.textContent = key === "completed" ? (todo[key] ? "Sí" : "No") : todo[key];
-          tr.appendChild(td);
-        });
-
-        const tdActions = document.createElement("td");
-        tdActions.classList.add("border", "px-4", "py-2");
-
-        const btnEdit = document.createElement("button");
-        btnEdit.textContent = "Editar";
-        btnEdit.classList.add("bg-yellow-500", "text-white", "p-2", "rounded", "hover:bg-yellow-600", "mr-2");
-        btnEdit.addEventListener("click", () => openModal(todo));
-
-        const btnDelete = document.createElement("button"); 
-        btnDelete.textContent = "Delete";
-        btnDelete.classList.add("bg-red-500", "text-white", "p-2", "rounded", "hover:bg-red-600");
-        btnDelete.addEventListener("click", () => {
-          tr.remove();
-          // Aquí deberías también eliminar el todo de tu base de datos
-        });
-
-        tdActions.appendChild(btnEdit);
-        tdActions.appendChild(btnDelete);
-        tr.appendChild(tdActions);
-
-        tbody.appendChild(tr);
-      });
-    });
 
   return container;
 };
