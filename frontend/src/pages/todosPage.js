@@ -4,7 +4,7 @@ const fetchTodos = (tbody) => {
   })
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Error al obtener tareas`);
       }
       return response.json();
     })
@@ -33,14 +33,27 @@ const fetchTodos = (tbody) => {
         td5.classList.add("border", "px-4", "py-2");
 
         const updateBtn = document.createElement("button");
-        updateBtn.classList.add("bg-blue-500", "text-white", "p-2", "rounded", "hover:bg-blue-600", "mr-2");
+        updateBtn.classList.add(
+          "bg-blue-200",
+          "text-black",
+          "p-2",
+          "rounded",
+          "hover:bg-blue-300",
+          "mr-2"
+        );
         updateBtn.textContent = "Actualizar";
         updateBtn.addEventListener("click", () => {
           showModal(todo, tbody);
         });
 
         const deleteBtn = document.createElement("button");
-        deleteBtn.classList.add("bg-red-500", "text-white", "p-2", "rounded", "hover:bg-red-600");
+        deleteBtn.classList.add(
+          "bg-red-200",
+          "text-black",
+          "p-2",
+          "rounded",
+          "hover:bg-red-300"
+        );
         deleteBtn.textContent = "Borrar";
         deleteBtn.addEventListener("click", () => {
           fetch(`http://localhost:4000/todos/${todo.id}`, {
@@ -49,16 +62,18 @@ const fetchTodos = (tbody) => {
           })
             .then((response) => {
               if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json().then((data) => {
+                  throw new Error(data.message);
+                });
               }
               return response.json();
             })
             .then((data) => {
-              console.log("Tarea eliminada:", data);
+              alert(data.message);
               fetchTodos(tbody); // Volver a obtener la lista de tareas
             })
             .catch((error) => {
-              console.error("Error al eliminar tarea:", error);
+              alert("Error al eliminar tarea: " + error.message);
             });
         });
 
@@ -74,19 +89,32 @@ const fetchTodos = (tbody) => {
       });
     })
     .catch((error) => {
-      console.error("Error al obtener tareas:", error);
+      alert(error.message);
     });
 };
 
 const showModal = (todo, tbody) => {
   const modal = document.createElement("div");
-  modal.classList.add("fixed", "top-0", "left-0", "w-full", "h-full", "bg-black", "bg-opacity-50", "flex", "justify-center", "items-center");
+  modal.classList.add(
+    "fixed",
+    "top-0",
+    "left-0",
+    "w-full",
+    "h-full",
+    "bg-black",
+    "bg-opacity-50",
+    "flex",
+    "justify-center",
+    "items-center"
+  );
 
   const modalContent = document.createElement("div");
   modalContent.classList.add("bg-white", "p-6", "rounded", "shadow-md");
 
   const modalTitle = document.createElement("h2");
-  modalTitle.textContent = todo.id ? `Editando Tarea ${todo.id}` : "Agregar Nueva Tarea";
+  modalTitle.textContent = todo.id
+    ? `Editando Tarea ${todo.id}`
+    : "Agregar Nueva Tarea";
   modalContent.appendChild(modalTitle);
 
   const inputTitle = document.createElement("input");
@@ -102,7 +130,14 @@ const showModal = (todo, tbody) => {
 
   const confirmButton = document.createElement("button");
   confirmButton.textContent = todo.id ? "Actualizar" : "Agregar";
-  confirmButton.classList.add("bg-green-500", "text-white", "p-2", "rounded", "mr-2");
+  confirmButton.classList.add(
+    "bg-green-200",
+    "text-black",
+    "p-2",
+    "rounded",
+    "mr-2",
+    "hover:bg-green-300"
+  );
   confirmButton.addEventListener("click", () => {
     if (todo.id) {
       // Actualizar tarea existente
@@ -121,17 +156,19 @@ const showModal = (todo, tbody) => {
       })
         .then((response) => {
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json().then((data) => {
+              throw new Error(data.message);
+            });
           }
           return response.json();
         })
         .then((data) => {
-          console.log("Tarea actualizada:", data);
+          alert(data.message);
           modal.remove();
           fetchTodos(tbody); // Volver a obtener la lista de tareas
         })
         .catch((error) => {
-          console.error("Error al actualizar tarea:", error);
+          alert("Error al actualizar tarea: " + error.message);
         });
     } else {
       const newTodo = {
@@ -149,17 +186,19 @@ const showModal = (todo, tbody) => {
       })
         .then((response) => {
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json().then((data) => {
+              throw new Error(data.message);
+            });
           }
           return response.json();
         })
         .then((data) => {
-          console.log("Tarea agregada:", data);
+          alert(data.message);
           modal.remove();
           fetchTodos(tbody); // Volver a obtener la lista de tareas
         })
         .catch((error) => {
-          console.error("Error al agregar tarea:", error);
+          alert("Error al agregar tarea: " + error.message);
         });
     }
   });
@@ -167,7 +206,13 @@ const showModal = (todo, tbody) => {
 
   const cancelButton = document.createElement("button");
   cancelButton.textContent = "Cancelar";
-  cancelButton.classList.add("bg-red-500", "text-white", "p-2", "rounded");
+  cancelButton.classList.add(
+    "bg-red-200",
+    "text-black",
+    "p-2",
+    "rounded",
+    "hover:bg-red-300"
+  );
   cancelButton.addEventListener("click", () => {
     modal.remove();
   });
@@ -179,10 +224,24 @@ const showModal = (todo, tbody) => {
 
 export const todosPage = () => {
   const container = document.createElement("div");
-  container.classList.add("flex", "flex-col", "items-center", "justify-center", "h-screen", "bg-gray-200");
+  container.classList.add(
+    "flex",
+    "flex-col",
+    "items-center",
+    "justify-center",
+    "h-screen",
+    "bg-gray-200"
+  );
 
   const btnHome = document.createElement("button");
-  btnHome.classList.add("bg-blue-500", "text-white", "p-2", "rounded", "hover:bg-blue-600", "mb-4");
+  btnHome.classList.add(
+    "bg-blue-200",
+    "text-black",
+    "p-2",
+    "rounded",
+    "hover:bg-blue-300",
+    "mb-4"
+  );
   btnHome.textContent = "Home";
   btnHome.addEventListener("click", () => {
     window.location.pathname = "/home";
@@ -193,7 +252,13 @@ export const todosPage = () => {
   title.textContent = "List of Todos";
 
   const table = document.createElement("table");
-  table.classList.add("w-1/2", "bg-white", "shadow-md", "h-[700px]", "overflow-y-scroll");
+  table.classList.add(
+    "w-1/2",
+    "bg-white",
+    "shadow-md",
+    "h-[700px]",
+    "overflow-y-scroll"
+  );
 
   const thead = document.createElement("thead");
   const tr = document.createElement("tr");
@@ -234,7 +299,14 @@ export const todosPage = () => {
   fetchTodos(tbody);
 
   const addButton = document.createElement("button");
-  addButton.classList.add("bg-green-500", "text-white", "p-2", "rounded", "mt-4");
+  addButton.classList.add(
+    "bg-green-200",
+    "text-black",
+    "p-2",
+    "rounded",
+    "mt-4",
+    "hover:bg-green-300"
+  );
   addButton.textContent = "Agregar Tarea";
   addButton.addEventListener("click", () => {
     showModal({ title: "", completed: false }, tbody);

@@ -12,6 +12,12 @@ import { todosRouter } from "./routes/todos.routes.js";
 
 const app = express();
 
+// Middleware para registrar las solicitudes
+app.use((req, res, next) => {
+  console.log(`${req.method} request for '${req.url}'`);
+  next();
+});
+
 app.use(
   cors({
     origin: [
@@ -39,6 +45,8 @@ app.use(
 // routes
 app.use("/auth", authRouter);
 app.use("/todos", todosRouter);
+
+
 
 // Servidor escuchando
 app.listen(PORT, () => {
